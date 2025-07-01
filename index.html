@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>42 Codecrawler - The Final Ascent</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        .retro-font { font-family: 'Press Start 2P', cursive; }
+        .pixel-border { border: 4px solid #28A745; box-shadow: 5px 5px 0 #1a682c; }
+        .pixel-border-red { border: 4px solid #E94560; box-shadow: 5px 5px 0 #a32e43; }
+        .pixel-border-blue { border: 4px solid #3B82F6; box-shadow: 5px 5px 0 #1D4ED8; }
+        .pixel-border-purple { border: 4px solid #7E22CE; box-shadow: 5px 5px 0 #581C87; }
+        .pixel-border-gold { border: 4px solid #FBBF24; box-shadow: 5px 5px 0 #B45309; }
+        .btn-hover:hover { transform: translate(2px, 2px); box-shadow: 3px 3px 0 #1a682c; }
+        .btn-hover-red:hover { transform: translate(2px, 2px); box-shadow: 3px 3px 0 #a32e43; }
+        .btn-hover-blue:hover { transform: translate(2px, 2px); box-shadow: 3px 3px 0 #1D4ED8; }
+
+        body {
+            background-color: #111827;
+            background-image:
+                linear-gradient(rgba(17, 24, 39, 0.95) 50%, rgba(17, 24, 39, 1)),
+                repeating-linear-gradient(0deg, transparent, transparent 2px, #1f2937 2px, #1f2937 3px);
+            position: relative;
+        }
+        body::after { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; box-shadow: inset 0 0 150px rgba(0,0,0,0.75); z-index: 100; }
+        body::-webkit-scrollbar { display: none; }
+        body { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .screen-shake { animation: shake 0.4s, flashRed 0.4s; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        @keyframes flashRed {
+            0%, 100% { box-shadow: inset 0 0 150px rgba(0,0,0,0.75); }
+            50% { box-shadow: inset 0 0 150px rgba(0,0,0,0.75), 0 0 100px rgba(255, 0, 0, 0.8); }
+        }
+
+        .card-container { perspective: 1000px; }
+        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+        .card-container.is-flipped .card-inner { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1.5rem; }
+        .card-back { transform: rotateY(180deg); }
+        .code-block { background-color: #000; color: #00ff00; font-family: monospace; padding: 1rem; border: 2px solid #374151; width: 100%; text-align: left; font-size: 0.8em; overflow-x: auto; }
+        .hp-bar-container { width: 100%; height: 20px; background-color: #4B5563; border: 2px solid #1F2937; }
+        .hp-bar-inner { height: 100%; background: linear-gradient(90deg, #b91c1c, #ef4444); transition: width 0.5s ease-in-out; }
+        .modal { transition: all 0.3s ease; opacity: 0; visibility: hidden; transform: scale(0.8); z-index: 150; }
+        .modal.active { opacity: 1; visibility: visible; transform: scale(1); }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        #epic-ending {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; color: #fBBF24; display: flex;
+            justify-content: center; overflow: hidden; z-index: 200;
+        }
+        .credits-content {
+            position: absolute; top: 100%; width: 80%; max-width: 600px;
+            text-align: center; animation: scroll-up 40s linear forwards;
+        }
+        .credits-content h2 { font-size: 2em; margin-bottom: 2rem; }
+        .credits-content p { font-size: 1em; margin-bottom: 1.5rem; }
+        .credits-content .perk-list { margin-top: 3rem; margin-bottom: 3rem; }
+        @keyframes scroll-up {
+            from { top: 100%; }
+            to { top: -150%; }
+        }
+    </style>
+</head>
+<body class="retro-font text-gray-200 h-screen flex flex-col">
+    <!-- Contenido del Juego -->
+    <div id="game-wrapper" class="flex flex-col h-full">
+        <header class="bg-black/50 p-4 border-b-4 border-blue-800 backdrop-blur-sm">
+            <div class="container mx-auto flex flex-col md:flex-row justify-between items-center px-2">
+                <div class="text-center md:text-left mb-4 md:mb-0">
+                    <h1 class="text-base sm:text-lg md:text-xl text-white flex items-center justify-center md:justify-start gap-2 sm:gap-4">
+                        <i class="fas fa-dungeon text-blue-400"></i>
+                        <span>42 Codecrawler</span>
+                    </h1>
+                    <h2 id="dungeon-name" class="text-sm text-blue-300 italic"></h2>
+                    <p id="dungeon-counter" class="text-xs text-gray-400"></p>
+                </div>
+                <!-- Stats -->
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <div class="flex-grow"><span class="text-xs text-red-300">HP</span><div class="hp-bar-container pixel-border-red bg-red-900"><div id="hp-bar" class="hp-bar-inner"></div></div></div>
+                    <div class="p-1 sm:p-2 pixel-border-blue bg-blue-100 text-gray-800 flex items-center text-xs sm:text-base"><span class="mr-1 sm:mr-2">⚔️</span><span id="contador-cartas" class="font-bold">0</span><span class="ml-1 hidden sm:inline">/ <span id="total-cartas"></span></span></div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow container mx-auto px-2 sm:px-4 py-4 sm:py-8 flex flex-col justify-center items-center">
+            <div id="card-container" class="card-container w-full max-w-3xl h-64 sm:h-80 mb-6"><div id="card-inner" class="card-inner"><div class="card-face pixel-border-blue bg-gray-800/80 backdrop-blur-sm"><div id="card-question" class="text-center text-sm md:text-base"></div></div><div class="card-face card-back pixel-border-green bg-gray-800/80 backdrop-blur-sm"><div id="card-answer" class="text-center text-sm md:text-base"></div></div></div></div>
+            <div id="button-container" class="flex justify-center mt-4 sm:mt-8 gap-2 sm:gap-4 flex-wrap"><button id="flip-btn" class="pixel-border-blue bg-blue-500 text-white px-4 py-2 sm:px-6 sm:py-3 transition-all btn-hover-blue w-full sm:w-56 flex items-center justify-center text-sm sm:text-base"><i class="fas fa-eye mr-2"></i> REVELAR</button><button id="correct-btn" class="hidden pixel-border bg-green-500 text-white px-4 py-2 sm:px-6 sm:py-3 transition-all btn-hover w-full sm:w-48 flex items-center justify-center text-sm sm:text-base"><i class="fas fa-check mr-2"></i> ACERTÉ</button><button id="incorrect-btn" class="hidden pixel-border-red bg-red-500 text-white px-4 py-2 sm:px-6 sm:py-3 transition-all btn-hover-red w-full sm:w-48 flex items-center justify-center text-sm sm:text-base"><i class="fas fa-times mr-2"></i> FALLÉ</button></div>
+        </main>
+        
+        <footer class="bg-black/50 p-2 sm:p-4 border-t-4 border-blue-800 backdrop-blur-sm">
+            <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center">
+                <div class="mb-2 sm:mb-0 text-center">
+                    <p class="retro-font text-white text-xs sm:text-sm"><span>PERKS ACTIVOS:</span></p>
+                    <div id="perks-display" class="flex gap-4 mt-2 justify-center"></div>
+                </div>
+                <button id="reglas-btn" class="retro-font pixel-border-purple bg-purple-600 text-white px-4 py-2 sm:px-6 sm:py-3 transition-all btn-hover flex items-center justify-center text-xs sm:text-base mt-2 sm:mt-0"><i class="fas fa-scroll mr-2"></i> REGLAS</button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-reglas" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4"><div class="bg-gray-800 p-6 pixel-border-purple max-w-md w-full"><h2 class="retro-font text-2xl mb-4 text-center text-purple-400">CÓDIGO DE SUPERVIVENCIA</h2><div class="mb-4 text-white text-sm retro-font"><p class="mb-2">1. CADA CARTA ES UN ECO CORRUPTO. ACIERTA PARA PURIFICARLO.</p><p class="mb-2">2. FALLAR DRENA TU CORDURA (HP). SÉ HONESTO, LA MAZMORRA NO PERDONA.</p><p class="mb-2">3. SI TU HP LLEGA A 0, LA OSCURIDAD TE CONSUME. GAME OVER.</p><p class="mt-4 text-yellow-300">4. EL DESTINO ES CAPRICHOSO. PUEDEN OCURRIR EVENTOS INESPERADOS.</p></div><button id="cerrar-reglas" class="retro-font pixel-border bg-green-500 text-white px-4 py-2 w-full">¡ENTENDIDO!</button></div></div>
+    <div id="modal-gameover" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4"><div class="bg-gray-800 p-6 pixel-border-red max-w-md w-full text-center"><h2 class="retro-font text-4xl mb-4 text-red-500">HAS CAÍDO</h2><i class="fas fa-tombstone text-6xl text-gray-500 mb-4"></i><p class="retro-font mb-2 text-white">LA MAZMORRA RECLAMA TU ALMA.</p><p class="retro-font mb-6 text-white">FRAGMENTOS PURIFICADOS: <strong id="final-score" class="text-yellow-400">0</strong></p><button id="restart-run-btn" class="retro-font pixel-border bg-green-500 text-white px-4 py-2 w-full">REINTENTAR MAZMORRA</button></div></div>
+    <div id="modal-dungeon-cleared" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4"><div class="bg-gray-800 p-6 pixel-border-gold max-w-md w-full text-center"><h2 class="retro-font text-2xl mb-4 text-amber-300">MAZMORRA SUPERADA</h2><i class="fas fa-door-open text-6xl text-gray-300 mb-4"></i><p class="retro-font mb-2 text-white">HAS SOBREVIVIDO. TU HP HA SIDO RESTAURADO.</p><div id="new-perk-announcement" class="my-4 p-2 bg-purple-900 border-2 border-purple-500" style="display: none;"><p class="retro-font text-sm text-white">¡NUEVO PERK OBTENIDO!</p><p id="new-perk-name" class="retro-font text-purple-300"></p></div><p id="next-dungeon-lore" class="retro-font mb-6 text-sm text-blue-200 italic"></p><button id="next-dungeon-btn" class="retro-font pixel-border bg-blue-500 text-white px-4 py-2 w-full">ADENTRARSE EN LA OSCURIDAD</button></div></div>
+    <div id="modal-event" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4"><div class="bg-gray-800 p-6 pixel-border-purple max-w-md w-full text-center"><h2 id="event-title" class="retro-font text-2xl mb-4 text-purple-400">¡UN EVENTO!</h2><i id="event-icon" class="text-6xl text-gray-300 mb-4"></i><p id="event-description" class="retro-font mb-6 text-white"></p><button id="event-continue-btn" class="retro-font pixel-border bg-green-500 text-white px-4 py-2 w-full">CONTINUAR</button></div></div>
+    
+    <!-- PANTALLA DE FINAL ÉPICO -->
+    <div id="epic-ending" style="display: none;">
+        <div class="credits-content retro-font">
+            <h2 class="text-amber-300">ASCENSIÓN</h2>
+            <p>Saliste de las catacumbas, un mero iniciado...</p>
+            <p>Navegaste el laberinto de punteros, donde la realidad misma se doblaba.</p>
+            <p>Sobreviviste a la cripta de la memoria, donde los bytes perdidos gritan por la eternidad.</p>
+            <p>Dominaste los templos del tiempo y el espacio, convirtiendo ciclos infinitos en elegantes soluciones.</p>
+            <p>Incluso conquistaste el panteón de los proyectos en grupo, el mayor de todos los horrores.</p>
+            <p>La Norminette se inclina ante ti.</p>
+            <div class="perk-list">
+                <p>LAS HABILIDADES QUE FORJASTE EN LA OSCURIDAD:</p>
+                <div id="final-perks-list"></div>
+            </div>
+            <p>Tu código es poesía. Tu lógica, irrefutable.</p>
+            <p>Tu habilidad para encontrar café a las 4 AM, legendaria.</p>
+            <p>Has escapado de la mazmorra. Eres libre.</p>
+            <p class="mt-12 text-2xl text-white">PERO QUEDA UNA PREGUNTA...</p>
+            <p class="mt-8 text-3xl text-green-400">¿ESTÁS LISTO PARA EL SIGUIENTE PROYECTO?</p>
+            <button id="restart-from-end" class="mt-16 retro-font pixel-border bg-green-500 text-white px-8 py-4">UNA VEZ MÁS</button>
+        </div>
+    </div>
+
+
+    <script>
+    // --- DATABASE ---
+    const dungeons = [
+        { 
+            name: "Las Catacumbas de la Piscine", 
+            lore: "Los ecos de los primeros comandos resuenan aquí.",
+            perk: { id: "piel_de_novato", name: "Piel de Novato", icon: "fa-solid fa-shield-halved", desc: "La ignorancia es una bendición. Recibes 5 menos de daño por fallos." },
+            cards: [
+                { q: "¿Qué comando lista el contenido de un directorio con detalles y archivos ocultos?", a: "ls -la", ad: "'-l' para formato largo, '-a' para mostrar todos los archivos (incluyendo '.')." },
+                { q: "En C, ¿qué carácter termina una cadena (string)?", a: "El carácter nulo ('\\0')", ad: "Sin él, las funciones no saben dónde parar de leer. Un clásico del segfault." },
+                { q: "Corres `ls -l` y ves `dr-x--x--x`. ¿Qué significa la 'd' al principio?", a: "Que es un directorio (directory).", ad: "Los archivos regulares empiezan con '-', los enlaces simbólicos con 'l'." },
+                { q: "¿Cuál es la respuesta a la pregunta fundamental?", a: "42", ad: "Si no sabías esto, tu toalla no te servirá de nada aquí." }
+            ] 
+        },
+        { 
+            name: "El Laberinto de Punteros", 
+            lore: "Cada puntero es una trampa o una salida.",
+            perk: { id: "toalla_autoestopista", name: "Toalla de Autoestopista", icon: "fa-solid fa-person-hiking", desc: "¡No entres en pánico! Una vez por mazmorra, si recibes un golpe mortal, sobrevives con 1 HP." },
+            cards: [
+                { q: "¿Qué imprimirá este código?", qc: `int x = 10;\nint *p1 = &x;\nint **p2 = &p1;\nprintf("%d", **p2);`, a: "Imprimirá 10.", ad: "**p2 de-referencia p2 para obtener p1, y luego de-referencia p1 para obtener el valor de x." },
+                { q: "¿`char *s = \"hola\"` vs `char s[] = \"hola\"`?", a: "Puntero a literal (solo lectura) vs. Array en stack (modificable).", ad: "Intentar modificar el primero es Undefined Behavior. El segundo es tu amigo." },
+                { q: "Si `malloc(sizeof(int) * 5)` falla, ¿qué valor retorna?", a: "NULL", ad: "Siempre, SIEMPRE, debes comprobar si `malloc` retorna NULL." },
+                { q: "Explica el 'Puntero Colgante' (Dangling Pointer).", a: "Es un puntero que apunta a una dirección de memoria que ya ha sido liberada (free'd).", ad: "Usarlo es como jugar a la ruleta rusa con la memoria de tu programa." }
+            ] 
+        },
+        { 
+            name: "La Cripta de la Memoria Dinámica", 
+            lore: "Aquí yacen los bytes perdidos. Cada `malloc` es una tumba que debes recordar cerrar con `free`.",
+            perk: { id: "memoria_fotografica", name: "Memoria Fotográfica", icon: "fa-solid fa-camera-retro", desc: "Tu TDAH a veces ayuda. Tienes un 15% de probabilidad de 'recordar' la respuesta y no recibir daño al fallar." },
+            cards: [
+                { q: "¿Qué sucede si haces `free(ptr)` dos veces sobre el mismo puntero?", a: "Double free: Comportamiento Indefinido (Undefined Behavior).", ad: "Puede corromper el heap y hacer que tu programa se comporte de formas muy extrañas y terroríficas." },
+                { q: "Un 'Memory Leak' (fuga de memoria) ocurre cuando...", a: "Asignas memoria con `malloc` y pierdes todos los punteros a ella sin liberarla.", ad: "Es el fantasma que consume los recursos de tu sistema lentamente." },
+                { q: "¿Qué hace `malloc(0)`?", a: "Comportamiento definido por la implementación.", ad: "Puede devolver `NULL` o un puntero válido que no debe ser de-referenciado. No lo uses." }
+            ]
+        },
+        { 
+            name: "El Templo de los Algoritmos Olvidados", 
+            lore: "El tiempo y el espacio son relativos aquí. Elige el camino correcto o vagarás por ciclos infinitos.",
+            perk: { id: "atajo_cuantico", name: "Atajo Cuántico", icon: "fa-solid fa-bolt", desc: "Tu comprensión del tiempo-espacio te permite empezar cada mazmorra con 1 carta ya superada." },
+            cards: [
+                { q: "¿Qué es la 'recursión'?", a: "Una función que se llama a sí misma.", ad: "Debe tener un caso base para no causar un 'stack overflow', el abismo del que ninguna llamada retorna." },
+                { q: "En notación Big O, ¿qué es mejor: O(n) u O(log n)?", a: "O(log n) es mucho mejor (más rápido).", ad: "Crece mucho más lento a medida que aumenta el tamaño de la entrada. Es la diferencia entre buscar en un diccionario página por página o por la mitad." },
+                { q: "¿Cuál es el propósito de un 'caso base' en una función recursiva?", a: "Detener la recursión.", ad: "Sin él, la función se llamaría a sí misma para siempre, consumiendo la pila de llamadas hasta el colapso." }
+            ]
+        },
+        { 
+            name: "El Panteón de los Proyectos en Grupo", 
+            lore: "El horror no está en el código, sino en los commits de tus compañeros a las 3 AM.",
+            perk: { id: "cafe_divino_permanente", name: "Café Divino Permanente", icon: "fa-solid fa-mug-hot", desc: "El evento 'Café Divino' ahora te cura 15 HP adicionales." },
+            cards: [
+                { q: "¿Qué hace el comando `git rebase`?", a: "Re-aplica commits de una rama sobre otra.", ad: "Mantiene un historial lineal y limpio, pero no lo uses en ramas compartidas si no sabes lo que haces. Es magia negra." },
+                { q: "¿Cuál es el propósito principal de un `Makefile`?", a: "Automatizar la compilación.", ad: "Define reglas para compilar el proyecto, evitando tener que escribir comandos de `gcc` larguísimos una y otra vez." },
+                { q: "Tu compañero acaba de hacer `git push --force` a la rama `main`. ¿Qué haces?", a: "Llorar. Luego `git reflog`.", ad: "`reflog` es tu máquina del tiempo personal. Puede que salve el proyecto, pero no vuestra amistad." }
+            ]
+        },
+        { 
+            name: "La Ciudadela de la Norminette", 
+            lore: "La ley es absoluta. Un espacio de más, y los autómatas te juzgarán sin piedad.",
+            perk: { id: "sabiduria_final", name: "Sabiduría Final", icon: "fa-solid fa-brain", desc: "Has visto el código fuente del universo." },
+            cards: [
+                { q: "¿Cuántas funciones están permitidas por fichero .c según la Norminette?", a: "5 funciones.", ad: "Fomenta la modularidad. O el dolor." },
+                { q: "¿Cuál es el límite de columnas (caracteres por línea)?", a: "80 columnas.", ad: "Para que el código parezca escrito en un papiro antiguo." },
+                { q: "Un `for` loop, ¿es aceptado por la Norminette?", a: "No, la Norminette de 42 prohíbe el uso de `for`, `do-while`, `switch`, etc.", ad: "Debes usar `while`. Porque sufrir forja el carácter."}
+            ]
+        }
+    ];
+
+    const terrifyingEvents = [
+        { title: "FALLO DE SEGMENTACIÓN", description: " tropiezas en la oscuridad y golpeas una dirección de memoria prohibida. Pierdes 25 HP.", icon: "fa-solid fa-skull-crossbones", effect: () => { currentHP -= 25; triggerDamageEffect(); } },
+        { title: "CORRUPCIÓN DE LA PILA", description: " un eco maligno baraja los pasajes restantes de la mazmorra. ¡Las cartas que quedan han sido barajadas!", icon: "fa-solid fa-shuffle", effect: () => { shuffleRemainingDeck(); } },
+        { title: "ATAQUE DE LA NORMINETTE", description: " ¡un autómata guardián te encuentra! Te golpea por error de formato. Pierdes 10 HP.", icon: "fa-solid fa-robot", effect: () => { currentHP -= 10; triggerDamageEffect(); } },
+        { title: "CAFÉ DIVINO", description: " encuentras un termo abandonado. ¡Es café! El calor reconfortante te cura 20 HP.", icon: "fa-solid fa-mug-hot", effect: () => { 
+            let healing = 20;
+            if (unlockedPerks.some(p => p.id === 'cafe_divino_permanente')) healing += 15;
+            currentHP = Math.min(maxHP, currentHP + healing); 
+        } },
+        { title: "MOMENTO DE CLARIDAD", description: " de repente, todo tiene sentido. La próxima carta no te hará daño si fallas.", icon: "fa-solid fa-lightbulb", effect: () => { grantImmunityForNextCard = true; } }
+    ];
+
+    // --- DOM Elements ---
+    const dom = {
+        body: document.querySelector('body'),
+        gameWrapper: document.getElementById('game-wrapper'),
+        hpBar: document.getElementById('hp-bar'),
+        cardCounter: document.getElementById('contador-cartas'),
+        totalCardsEl: document.getElementById('total-cartas'),
+        dungeonNameEl: document.getElementById('dungeon-name'),
+        dungeonCounterEl: document.getElementById('dungeon-counter'),
+        cardContainer: document.getElementById('card-container'),
+        cardQuestion: document.getElementById('card-question'),
+        cardAnswer: document.getElementById('card-answer'),
+        flipBtn: document.getElementById('flip-btn'),
+        correctBtn: document.getElementById('correct-btn'),
+        incorrectBtn: document.getElementById('incorrect-btn'),
+        perksDisplay: document.getElementById('perks-display'),
+        modals: {
+            reglas: document.getElementById('modal-reglas'),
+            gameover: document.getElementById('modal-gameover'),
+            cleared: document.getElementById('modal-dungeon-cleared'),
+            event: document.getElementById('modal-event')
+        },
+        buttons: {
+            reglas: document.getElementById('reglas-btn'),
+            cerrarReglas: document.getElementById('cerrar-reglas'),
+            restart: document.getElementById('restart-run-btn'),
+            nextDungeon: document.getElementById('next-dungeon-btn'),
+            eventContinue: document.getElementById('event-continue-btn'),
+        },
+        modalContent: {
+            finalScore: document.getElementById('final-score'),
+            newPerkAnnounce: document.getElementById('new-perk-announcement'),
+            newPerkName: document.getElementById('new-perk-name'),
+            nextLore: document.getElementById('next-dungeon-lore'),
+            eventTitle: document.getElementById('event-title'),
+            eventDesc: document.getElementById('event-description'),
+            eventIcon: document.getElementById('event-icon'),
+        },
+        ending: {
+            screen: document.getElementById('epic-ending'),
+            perksList: document.getElementById('final-perks-list'),
+            restartBtn: document.getElementById('restart-from-end')
+        }
+    };
+    
+    // --- Game State ---
+    let maxHP = 100, currentHP, currentDeck = [], currentCardIndex, cardsClearedInRun, currentDungeonIndex = 0;
+    let unlockedPerks = [], highestDungeonCleared = -1;
+    let eventInProgress = false, grantImmunityForNextCard = false, towelUsedThisDungeon = false;
+    let currentEvent = null;
+
+    // --- Core Functions ---
+    function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } }
+    function shuffleRemainingDeck() {
+        const remaining = currentDeck.slice(currentCardIndex);
+        shuffleArray(remaining);
+        currentDeck = [...currentDeck.slice(0, currentCardIndex), ...remaining];
+    }
+    
+    function startDungeon(dungeonIndex) {
+        currentDungeonIndex = dungeonIndex;
+        localStorage.setItem('codecrawlerDungeonIndex', currentDungeonIndex);
+        
+        const dungeon = dungeons[dungeonIndex];
+        currentHP = maxHP;
+        currentCardIndex = 0;
+        cardsClearedInRun = 0;
+        towelUsedThisDungeon = false;
+        currentDeck = [...dungeon.cards];
+        shuffleArray(currentDeck);
+        
+        dom.dungeonNameEl.textContent = dungeon.name;
+        dom.dungeonCounterEl.textContent = `Profundidad: ${dungeonIndex + 1} / ${dungeons.length}`;
+        Object.values(dom.modals).forEach(m => m.classList.remove('active'));
+        
+        populateUnlockedPerks();
+        if (unlockedPerks.some(p => p.id === 'atajo_cuantico')) {
+            cardsClearedInRun = 1;
+        }
+
+        updateUI();
+        loadCard();
+    }
+    
+    function loadCard() {
+        if (currentCardIndex >= currentDeck.length) { // Should not happen with new logic, but a good safeguard
+            dungeonCleared();
+            return;
+        }
+        const card = currentDeck[currentCardIndex];
+        
+        dom.cardContainer.classList.remove('is-flipped', 'fade-in');
+        void dom.cardContainer.offsetWidth; 
+        dom.cardContainer.classList.add('fade-in');
+
+        let qHTML = `<p class="retro-font mb-4">${card.q}</p>`;
+        if(card.qc) { qHTML += `<pre class="code-block"><code>${card.qc.replace(/</g, "<").replace(/>/g, ">")}</code></pre>`; }
+        dom.cardQuestion.innerHTML = qHTML;
+
+        let aHTML = `<p class="retro-font mb-4 text-green-300 font-bold">${card.a}</p>`;
+        if (card.ad) { aHTML += `<p class="retro-font text-xs text-gray-400 italic">${card.ad}</p>`; }
+        dom.cardAnswer.innerHTML = aHTML;
+
+        dom.flipBtn.style.display = 'flex';
+        dom.correctBtn.style.display = 'none';
+        dom.incorrectBtn.style.display = 'none';
+    }
+
+    function handleFlip() {
+        dom.cardContainer.classList.add('is-flipped');
+        dom.flipBtn.style.display = 'none';
+        dom.correctBtn.style.display = 'flex';
+        dom.incorrectBtn.style.display = 'flex';
+    }
+
+    function handleAnswer(isCorrect) {
+        if (!isCorrect) {
+            if (unlockedPerks.some(p => p.id === 'memoria_fotografica') && Math.random() < 0.15) {
+                // Perk procced, no damage
+            } else {
+                let damage = calculateDamage();
+                if (unlockedPerks.some(p => p.id === 'toalla_autoestopista') && !towelUsedThisDungeon && (currentHP - damage <= 0)) {
+                    currentHP = 1;
+                    towelUsedThisDungeon = true;
+                } else {
+                    currentHP -= damage;
+                }
+                triggerDamageEffect();
+            }
+        } else {
+            cardsClearedInRun++;
+        }
+        
+        grantImmunityForNextCard = false;
+        if (currentHP < 0) currentHP = 0;
+        updateUI();
+
+        if (currentHP <= 0) { gameOver(); return; }
+        
+        currentCardIndex++;
+        
+        if (Math.random() < 0.25) { 
+            triggerRandomEvent();
+        } else {
+            loadNextCard();
+        }
+    }
+    
+    function loadNextCard() {
+        if (currentCardIndex >= currentDeck.length) { 
+            dungeonCleared(); 
+        } else { 
+            setTimeout(loadCard, 400); 
+        }
+    }
+
+    function dungeonCleared() {
+        highestDungeonCleared = Math.max(highestDungeonCleared, currentDungeonIndex);
+        localStorage.setItem('codecrawlerHighestDungeon', highestDungeonCleared);
+        populateUnlockedPerks();
+
+        const nextIndex = currentDungeonIndex + 1;
+        if (nextIndex >= dungeons.length) { 
+            victory(); 
+        } else {
+            const newPerk = dungeons[currentDungeonIndex].perk;
+            if (newPerk) {
+                dom.modalContent.newPerkName.textContent = `${newPerk.name}`;
+                dom.modalContent.newPerkAnnounce.style.display = 'block';
+            } else {
+                dom.modalContent.newPerkAnnounce.style.display = 'none';
+            }
+            dom.modalContent.nextLore.textContent = dungeons[nextIndex].lore;
+            dom.modals.cleared.classList.add('active');
+        }
+    }
+
+    function victory() {
+        dom.gameWrapper.style.display = 'none';
+        dom.ending.perksList.innerHTML = '';
+        unlockedPerks.forEach(perk => {
+            dom.ending.perksList.innerHTML += `<p class="text-purple-400">- ${perk.name} -</p>`;
+        });
+        dom.ending.screen.style.display = 'flex';
+    }
+
+    function gameOver() { 
+        dom.modalContent.finalScore.textContent = cardsClearedInRun;
+        dom.modals.gameover.classList.add('active'); 
+    }
+    
+    // --- Event and Perk Functions ---
+    function triggerRandomEvent() {
+        eventInProgress = true;
+        currentEvent = terrifyingEvents[Math.floor(Math.random() * terrifyingEvents.length)];
+        dom.modalContent.eventTitle.textContent = currentEvent.title;
+        dom.modalContent.eventDesc.textContent = currentEvent.description;
+        dom.modalContent.eventIcon.className = `${currentEvent.icon} text-6xl text-gray-300 mb-4`;
+        dom.modals.event.classList.add('active');
+    }
+
+    function continueAfterEvent() {
+        eventInProgress = false;
+        dom.modals.event.classList.remove('active');
+        currentEvent.effect();
+        updateUI();
+        if (currentHP <= 0) { gameOver(); return; }
+        loadNextCard();
+    }
+    
+    function populateUnlockedPerks() {
+        unlockedPerks = [];
+        for (let i = 0; i <= highestDungeonCleared; i++) {
+            if (dungeons[i].perk) {
+                unlockedPerks.push(dungeons[i].perk);
+            }
+        }
+        updatePerksUI();
+    }
+    
+    function calculateDamage() {
+        let baseDamage = 25;
+        if (unlockedPerks.some(p => p.id === 'piel_de_novato')) {
+            baseDamage -= 5;
+        }
+        return baseDamage;
+    }
+
+    // --- UI and Effect Functions ---
+    function triggerDamageEffect() {
+        dom.body.classList.add('screen-shake');
+        setTimeout(() => dom.body.classList.remove('screen-shake'), 400);
+    }
+    function updateUI() {
+        const hpPercentage = (currentHP / maxHP) * 100;
+        dom.hpBar.style.width = `${hpPercentage}%`;
+        dom.cardCounter.textContent = cardsClearedInRun;
+        dom.totalCardsEl.textContent = currentDeck.length;
+    }
+    function updatePerksUI() {
+        dom.perksDisplay.innerHTML = '';
+        if (unlockedPerks.length === 0) {
+            dom.perksDisplay.innerHTML = `<p class="text-gray-500 text-xs italic">NINGUNO</p>`;
+        } else {
+            unlockedPerks.forEach(perk => {
+                const perkIcon = document.createElement('i');
+                perkIcon.className = `${perk.icon} text-purple-400 text-lg`;
+                perkIcon.title = `${perk.name}: ${perk.desc}`;
+                dom.perksDisplay.appendChild(perkIcon);
+            });
+        }
+    }
+
+    // --- Event Listeners ---
+    dom.flipBtn.addEventListener('click', handleFlip);
+    dom.correctBtn.addEventListener('click', () => handleAnswer(true));
+    dom.incorrectBtn.addEventListener('click', () => handleAnswer(false));
+    dom.buttons.reglas.addEventListener('click', () => dom.modals.reglas.classList.add('active'));
+    dom.buttons.cerrarReglas.addEventListener('click', () => dom.modals.reglas.classList.remove('active'));
+    dom.buttons.restart.addEventListener('click', () => startDungeon(currentDungeonIndex));
+    dom.buttons.nextDungeon.addEventListener('click', () => startDungeon(currentDungeonIndex + 1));
+    dom.buttons.eventContinue.addEventListener('click', continueAfterEvent);
+    dom.ending.restartBtn.onclick = () => {
+        localStorage.removeItem('codecrawlerHighestDungeon');
+        localStorage.removeItem('codecrawlerDungeonIndex');
+        window.location.reload();
+    };
+
+
+    // --- Initial Load ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedHighest = localStorage.getItem('codecrawlerHighestDungeon');
+        highestDungeonCleared = savedHighest ? parseInt(savedHighest, 10) : -1;
+        
+        const savedDungeon = localStorage.getItem('codecrawlerDungeonIndex');
+        const initialDungeon = savedDungeon ? parseInt(savedDungeon, 10) : 0;
+        startDungeon(initialDungeon);
+    });
+
+    </script>
+</body>
+</html>
