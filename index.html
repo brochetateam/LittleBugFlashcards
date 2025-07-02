@@ -110,7 +110,10 @@
                     <div id="perks-display" class="flex gap-4 justify-center"></div>
                     <button id="perks-btn" class="pixel-border-blue bg-blue-600 text-white px-3 py-1 text-xs transition-all btn-hover-blue">VER</button>
                 </div>
-                <button id="reglas-btn" class="retro-font pixel-border-purple bg-purple-600 text-white px-4 py-2 sm:px-6 sm:py-3 transition-all btn-hover flex items-center justify-center text-xs sm:text-base mt-2 sm:mt-0"><i class="fas fa-scroll mr-2"></i> REGLAS</button>
+                <div class="flex flex-row justify-between w-full sm:w-auto gap-2 sm:gap-4">
+                    <button id="reset-btn" class="retro-font pixel-border-red bg-red-600 text-white px-4 py-2 sm:px-6 sm:py-3 transition-all btn-hover-red flex items-center justify-center text-xs sm:text-base"><i class="fas fa-undo mr-2"></i> REINICIAR</button>
+                    <button id="reglas-btn" class="retro-font pixel-border-purple bg-purple-600 text-white px-4 py-2 sm:px-6 sm:py-3 transition-all btn-hover flex items-center justify-center text-xs sm:text-base"><i class="fas fa-scroll mr-2"></i> REGLAS</button>
+                </div>
             </div>
         </footer>
     </div>
@@ -277,6 +280,12 @@
     dom.buttons.eventContinue.addEventListener('click', continueAfterEvent);
     dom.buttons.perks.addEventListener('click', showPerksModal); dom.buttons.cerrarPerks.addEventListener('click', () => dom.modals.perks.classList.remove('active'));
     dom.ending.restartBtn.onclick = () => { localStorage.removeItem('codecrawlerHighestDungeon'); localStorage.removeItem('codecrawlerDungeonIndex'); window.location.reload(); };
+    
+    // Botón de reinicio
+    document.getElementById('reset-btn').addEventListener('click', function() {
+        localStorage.clear();
+        location.reload();
+    });
 
     // --- Initial Load ---
     document.addEventListener('DOMContentLoaded', () => {
